@@ -1,5 +1,7 @@
 package AddressBookDB;
 
+import java.util.Objects;
+
 public class AddressBook {
 	private String first_name;
 	private String last_name;
@@ -9,6 +11,9 @@ public class AddressBook {
 	private int zip;
 	private long phone;
 	private String email;
+	private int bookId;
+	private String bookName;
+	private String bookType;
 	
 	public AddressBook(String first_name, String last_name, String address, String city, String state, int zip, long phone, String email) {
 		this.first_name = first_name;
@@ -21,6 +26,49 @@ public class AddressBook {
 		this.email = email;
 	}
 	
+	public AddressBook(int bookId, String bookName, String bookType, String first_name, String last_name, String address, String city, String state, int zip, long phone, String email) {
+		this.bookId = bookId;
+		this.bookName = bookName;
+		this.bookType = bookType;
+		this.first_name = first_name;
+		this.last_name = last_name;
+		this.address = address;
+		this.city = city;
+		this.state = state;
+		this.zip = zip;
+		this.phone =phone;
+		this.email = email;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(first_name, last_name, phone, email);
+	}
+	
+	public int getBookId() {
+		return bookId;
+	}
+
+	public void setBookId(int bookId) {
+		this.bookId = bookId;
+	}
+
+	public String getBookName() {
+		return bookName;
+	}
+
+	public void setBookName(String bookName) {
+		this.bookName = bookName;
+	}
+
+	public String getBookType() {
+		return bookType;
+	}
+
+	public void setBookType(String bookType) {
+		this.bookType = bookType;
+	}
+
 	public String getFirst_name() {
 		return first_name;
 	}

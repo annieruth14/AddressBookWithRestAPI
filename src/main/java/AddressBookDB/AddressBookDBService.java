@@ -24,7 +24,8 @@ public class AddressBookDBService {
 		connection = DriverManager.getConnection(jdbcURL, userName, password); // used DriverManager to get the connection
 		return connection;
 	}
-
+	
+	// get list from the database
 	public ArrayList<AddressBook> getDetails() throws AddressBookException {
 		ArrayList<AddressBook> addressList = new ArrayList<>();
 		try (Connection connection = this.getConnection()) {
@@ -40,6 +41,7 @@ public class AddressBookDBService {
 		return addressList;	
 	}
 	
+	// get each field of address book list from the database
 	public ArrayList<AddressBook> getDetails(ResultSet resultSet) throws SQLException {
 		String firstName = "", lastName = "", email = "", state = "", city = "", zip = "", address = "";
 		long phone = 0;
@@ -96,6 +98,7 @@ public class AddressBookDBService {
 		return list;
 	}
 	
+	// checks if bookId is present in the book table
 	public List<String> getBook(int bookId) throws AddressBookException {
 		List<String> list = new ArrayList<>();
 		String sql = "Select book_name from book where book_id = ?;";
@@ -112,8 +115,9 @@ public class AddressBookDBService {
 		}
 		return list;
 	}
-
-	public AddressBook addPersonWithDetails(int bookId, String bookName, String bookType, String firstName, String lastName, long phone, String email, String state, String city, String zip) throws AddressBookException {
+	
+	// adding details in three different tables
+	public synchronized AddressBook addPersonWithDetails(int bookId, String bookName, String bookType, String firstName, String lastName, long phone, String email, String city, String state, String zip) throws AddressBookException {
 		int personId = -1;
 		Connection connection = null;
 		AddressBook contact = null;
@@ -129,12 +133,13 @@ public class AddressBookDBService {
 		
 		// inserting to first table
 		try (Statement statement = connection.createStatement()) {
-			String sql = "insert into person (book_id, name, phone, email) values (?, ?, ?, ?);";
+			String sql = "insert into person (book_id, name, last_name, phone, email) values (?, ?, ?, ?, ?);";
 			addressBookDataStatement = connection.prepareStatement(sql, addressBookDataStatement.RETURN_GENERATED_KEYS);
 			addressBookDataStatement.setInt(1, bookId);
 			addressBookDataStatement.setString(2, firstName);
-			addressBookDataStatement.setLong(3, phone);
-			addressBookDataStatement.setString(4, email);
+			addressBookDataStatement.setString(3, lastName);
+			addressBookDataStatement.setLong(4, phone);
+			addressBookDataStatement.setString(5, email);
 			int rowAffected = addressBookDataStatement.executeUpdate();
 			if (rowAffected == 1) {
 				ResultSet resultSet = addressBookDataStatement.getGeneratedKeys();
@@ -179,7 +184,7 @@ public class AddressBookDBService {
 		
 		// inserting into third table
 		try (Statement statement = connection.createStatement()) {
-			String sql = String.format("insert into adress (person_id, state, city, zip) values (%s, '%s', '%s', '%s')", personId, city, state, zip);
+			String sql = String.format("insert into adress (person_id, state, city, zip) values (%s, '%s', '%s', '%s')", personId, state, city, zip);
 			int rowAffected = statement.executeUpdate(sql);
 			if (rowAffected == 1) {
 				contact = new AddressBook(firstName, lastName , city, city, state, Integer.parseInt(zip), phone, email);
@@ -216,7 +221,8 @@ public class AddressBookDBService {
 		}
 		return contact;
 	}
-
+	
+	// get list of persons name when searched by city
 	public List<String> getPersonByCity(String city) throws AddressBookException {
 		List<String> list = new ArrayList<>();
 		String sql = "select p.name from person p natural join adress a where a.city = ? ;";

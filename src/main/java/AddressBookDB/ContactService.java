@@ -1,6 +1,7 @@
 package AddressBookDB;
 
 import java.util.Scanner;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -189,8 +190,8 @@ public class ContactService {
 				.orElse(null);
 	}
 
-	public boolean addPersonInDB(int bookId, String bookName, String bookType, String firstName, String lastName, long phone, String email, String state, String city, String zip) throws AddressBookException {
-		AddressBook person = dbService.addPersonWithDetails(bookId, bookName, bookType, firstName, lastName, phone, email, state, city, zip);
+	public boolean addPersonInDB(int bookId, String bookName, String bookType, String firstName, String lastName, long phone, String email, String city, String state, String zip) throws AddressBookException {
+		AddressBook person = dbService.addPersonWithDetails(bookId, bookName, bookType, firstName, lastName, phone, email, city, state, zip);
 		if(person != null)
 			return true;
 		return false;
@@ -202,15 +203,49 @@ public class ContactService {
 		return list;
 	}
 
-	public void addPersonInDB(List<AddressBook> listOfContacts, int bookId, String bookName, String bookType) {
+	public void addPersonInDB(List<AddressBook> listOfContacts) {
 		listOfContacts.forEach(contact -> {
 			try {
 				addressList.add(contact);
-				this.addPersonInDB(bookId, bookName, bookType, contact.getFirst_name(), contact.getLast_name(), contact.getPhone(), contact.getEmail(), contact.getState(), contact.getCity(), Integer.toString(contact.getZip()));
+				this.addPersonInDB(contact.getBookId(), contact.getBookName(), contact.getBookType(), 
+								contact.getFirst_name(), contact.getLast_name(), contact.getPhone(), 
+								contact.getEmail(), contact.getCity(), contact.getState(),
+								Integer.toString(contact.getZip()));
 			} catch (AddressBookException e) {
 				e.printStackTrace();
 			}
 		});
+	}
+	
+	// adding person using threads
+	public void addPersonInDBWithThread(List<AddressBook> list) {
+		Map<Integer, Boolean> contactAdditionStatus = new HashMap<Integer, Boolean>();
+		list.forEach(contact -> {
+			Runnable task = () -> {
+				contactAdditionStatus.put(contact.hashCode(), false);
+				System.out.println("Contact being added: " + Thread.currentThread().getName());
+				try {
+					addressList.add(dbService.addPersonWithDetails(contact.getBookId(), contact.getBookName(), contact.getBookType(), 
+							contact.getFirst_name(), contact.getLast_name(), contact.getPhone(), 
+							contact.getEmail(), contact.getCity(), contact.getState(),
+							Integer.toString(contact.getZip())));
+				} catch (AddressBookException e) {
+					e.printStackTrace();
+				}
+				contactAdditionStatus.put(contact.hashCode(), true);
+				System.out.println("Contact added: "+ Thread.currentThread().getName());
+			};
+			Thread thread = new Thread(task, contact.getFirst_name());
+			thread.start();
+		});
+		while(contactAdditionStatus.containsValue(false)) {
+			try {
+				Thread.sleep(20);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	// REST Assured
